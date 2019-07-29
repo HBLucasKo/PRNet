@@ -51,7 +51,9 @@ class TrainData(object):
             imgs.append(im_array / 255.0)
 
             label_array = np.array(label, dtype=np.float32)
-            labels_array_norm = labels_array_norm = np.interp(label_array, (label_array.min(), label_array.max()), (-1, 1))
+            label_array= (label_array - label_array.min()) / (label_array.max() - label_array.min())
+            labels_array_norm = np.interp(label_array, (label_array.min(), label_array.max()), (0, +1))
+
             labels.append(labels_array_norm)
 
         batch.append(imgs)
@@ -115,6 +117,9 @@ def main(args):
     # weights = tf.broadcast_to(weights, [1, 256,256,3])
     # Loss
     loss = tf.losses.mean_squared_error(label, x_op, weights=weights)
+    global_step = tf.Variable(0, trainable=False)
+    learning_rate = tf.train.exponential_decay(learning_rate=learning_rate, global_step=global_step,
+                                                   decay_steps=1000, decay_rate=0.96, staircase=True)
 
     # This is for batch norm layer
     update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
@@ -164,13 +169,13 @@ if __name__ == '__main__':
 
     par.add_argument('--train_data_file', default='Data/trainData/trainDataLabel.txt', type=str,
                      help='The training data file')
-    par.add_argument('--learning_rate', default=0.0001, type=float, help='The learning rate')
+    par.add_argument('--learning_rate', default=0.01, type=float, help='The learning rate')
     par.add_argument('--epochs', default=30, type=int, help='Total epochs')
     par.add_argument('--batch_size', default=16, type=int, help='Batch sizes')
-    par.add_argument('--checkpoint', default='checkpoint/check2/', type=str, help='The path of checkpoint')
-    par.add_argument('--model_path', default='checkpoint/check2/256_256_resfcn256_weight', type=str,
+    par.add_argument('--checkpoint', default='checkpoint/check/', type=str, help='The path of checkpoint')
+    par.add_argument('--model_path', default='checkpoint/check/256_256_resfcn256_weight', type=str,
                      help='The path of pretrained model')
-    par.add_argument('--gpu', default='1', type=str, help='The GPU ID')
+    par.add_argument('--gpu', default='0', type=str, help='The GPU ID')
 
     main(par.parse_args())
 
